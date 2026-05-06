@@ -1,8 +1,12 @@
 import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.model_selection import train_test_split
-from sklearn.neural_network import MLPClassifier
-from sklearn.metrics import accuracy_score
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score, confusion_matrix
 
 # ---------------- LOAD DATA ----------------
 df = pd.read_csv("final_dataset.csv")
@@ -20,19 +24,10 @@ X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2, random_state=42
 )
 
-# ---------------- MODEL ----------------
-mlp = MLPClassifier(hidden_layer_sizes=(100,50), max_iter=300)
-mlp.fit(X_train, y_train)
+# ---------------- DECISION TREE ----------------
+dt = DecisionTreeClassifier()
+dt.fit(X_train, y_train)
 
-# ---------------- PREDICTION ----------------
-y_pred = mlp.predict(X_test)
+dt_pred = dt.predict(X_test)
 
-print("Accuracy:", accuracy_score(y_test, y_pred))
-
-import matplotlib.pyplot as plt
-
-plt.plot(mlp.loss_curve_)
-plt.xlabel("Iterations")
-plt.ylabel("Loss")
-plt.title("Neural Network Loss Curve")
-plt.show()
+print("Decision Tree Accuracy:", accuracy_score(y_test, dt_pred))
