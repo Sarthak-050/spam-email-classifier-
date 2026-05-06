@@ -1,8 +1,17 @@
-# Experiment 6: Final Spam Detection with User Input
-
 import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+
 from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import (
+    accuracy_score,
+    classification_report,
+    confusion_matrix,
+    roc_curve,
+    auc
+)
 
 # ---------------- LOAD DATA ----------------
 df = pd.read_csv("final_dataset.csv")
@@ -15,26 +24,44 @@ y = df['label']
 vectorizer = TfidfVectorizer(max_features=5000, ngram_range=(1,2))
 X = vectorizer.fit_transform(X_text)
 
+# ---------------- SPLIT ----------------
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42
+)
+
 # ---------------- MODEL ----------------
 model = LogisticRegression(max_iter=1000)
-model.fit(X, y)
+model.fit(X_train, y_train)
 
-# ----------- USER INPUT LOOP -----------
+# ---------------- PREDICTION ----------------
+y_pred = model.predict(X_test)
 
-while True:
-    user_input = input("\nEnter email text (type 'exit' to stop):\n")
+# ---------------- EVALUATION ----------------
+print("Accuracy:", accuracy_score(y_test, y_pred))
+print("\nConfusion Matrix:\n", confusion_matrix(y_test, y_pred))
+print("\nClassification Report:\n", classification_report(y_test, y_pred))
 
-    if user_input.lower() == "exit":
-        break
+# ---------------- CONFUSION MATRIX GRAPH ----------------
+cm = confusion_matrix(y_test, y_pred)
 
-    # clean input same as training
-    import re
-    cleaned = re.sub(r'[^a-zA-Z]', ' ', user_input.lower())
+plt.figure(figsize=(5,4))
+sns.heatmap(cm, annot=True, fmt='d')
+plt.xlabel("Predicted")
+plt.ylabel("Actual")
+plt.title("Confusion Matrix")
+plt.show()
 
-    vec = vectorizer.transform([cleaned])
-    pred = model.predict(vec)[0]
+# ---------------- ROC CURVE ----------------
+y_prob = model.predict_proba(X_test)[:,1]
 
-    if pred == 1:
-        print("🚫 SPAM")
-    else:
-        print("✅ NOT SPAM")
+fpr, tpr, _ = roc_curve(y_test, y_prob)
+roc_auc = auc(fpr, tpr)
+
+plt.figure()
+plt.plot(fpr, tpr, label="AUC = %0.4f" % roc_auc)
+plt.plot([0,1], [0,1], linestyle='--')
+plt.xlabel("False Positive Rate")
+plt.ylabel("True Positive Rate")
+plt.title("ROC Curve")
+plt.legend()
+plt.show()
